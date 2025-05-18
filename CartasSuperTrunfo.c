@@ -1,22 +1,122 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 
-int main(){
-int População, Número, de,  pontos, turísticos;
-float Pib;
-float Área;
-char Código, da, cidade[2] = '14';
-char Nome, da, cidade;
+#define NUM_CARTAS 10
+#define NUM_ATRIBUTOS 3
 
-printf("Digite a População: \n");
-scanf("%d", &População);
-printf("Digite o Pib: \n");
-scanf("%f", &Pib);
-printf("Digite a Área: \n");
-scanf("%F", &Área);
-printf("Digite o Código da cidade: \n");
-scanf("%s", &Código);
-printf("Digite o nome da cidade: \n");
-scanf("%s", &Nome);
+typedef struct {
+    char nome[50];
+    int atributos[NUM_ATRIBUTOS];
+} Carta;
+
+typedef struct {
+    Carta cartas[NUM_CARTAS];
+    int num_cartas;
+} Jogador;
+
+// Função para inicializar cartas com atributos aleatórios
+void inicializar_cartas(Carta cartas[NUM_CARTAS]) {
+    for (int i = 0; i < NUM_CARTAS; i++) {
+        sprintf(cartas[i].nome, "Carta %d", i + 1);
+        for (int j = 0; j < NUM_ATRIBUTOS; j++) {
+            cartas[i].atributos[j] = rand() % 100 + 1; // Atributos entre 1 e 100
+        }
+    }
+}
+
+// Função para exibir uma carta
+void exibir_carta(Carta carta) {
+    printf("Nome: %s\n", carta.nome);
+    for (int i = 0; i < NUM_ATRIBUTOS; i++) {
+        printf("Atributo %d: %d\n", i + 1, carta.atributos[i]);
+    }
+}
+
+// Função para distribuir as cartas entre dois jogadores
+void distribuir_cartas(Carta cartas[NUM_CARTAS], Jogador *jogador1, Jogador *jogador2) {
+    jogador1->num_cartas = NUM_CARTAS / 2;
+    jogador2->num_cartas = NUM_CARTAS / 2;
+
+    for (int i = 0; i < NUM_CARTAS / 2; i++) {
+        jogador1->cartas[i] = cartas[i];
+        jogador2->cartas[i] = cartas[i + NUM_CARTAS / 2];
+    }
+}
+
+// Função principal do jogo
+void jogar(Jogador *jogador1, Jogador *jogador2) {
+    int turno = 0; // 0 = Jogador 1, 1 = Jogador 2
+
+    while (jogador1->num_cartas > 0 && jogador2->num_cartas > 0) {
+        Jogador *jogador_atual = (turno == 0) ? jogador1 : jogador2;
+        Jogador *adversario = (turno == 0) ? jogador2 : jogador1;
+
+        printf("\n--- Turno do Jogador %d ---\n", turno + 1);
+        printf("Sua carta:\n");
+        exibir_carta(jogador_atual->cartas[0]);
+
+        int atributo_escolhido;
+        printf("Escolha um atributo (1-%d): ", NUM_ATRIBUTOS);
+        scanf("%d", &atributo_escolhido);
+        atributo_escolhido--; // Ajustar índice para começar em 0
+
+        if (atributo_escolhido < 0 || atributo_escolhido >= NUM_ATRIBUTOS) {
+            printf("Atributo inválido! Tente novamente.\n");
+            continue;
+        }
+
+        int valor_atual = jogador_atual->cartas[0].atributos[atributo_escolhido];
+        int valor_adversario = adversario->cartas[0].atributos[atributo_escolhido];
+
+        printf("\nJogador %d escolheu o atributo %d!\n", turno + 1, atributo_escolhido + 1);
+        printf("Valor do Jogador %d: %d\n", turno + 1, valor_atual);
+        printf("Valor do Jogador %d: %d\n", (turno == 0) ? 2 : 1, valor_adversario);
+
+        if (valor_atual > valor_adversario) {
+            printf("Jogador %d venceu a rodada!\n", turno + 1);
+            jogador_atual->cartas[jogador_atual->num_cartas] = adversario->cartas[0];
+            jogador_atual->num_cartas++;
+            for (int i = 0; i < adversario->num_cartas - 1; i++) {
+                adversario->cartas[i] = adversario->cartas[i + 1];
+            }
+            adversario->num_cartas--;
+        } else if (valor_atual < valor_adversario) {
+            printf("Jogador %d venceu a rodada!\n", (turno == 0) ? 2 : 1);
+            adversario->cartas[adversario->num_cartas] = jogador_atual->cartas[0];
+            adversario->num_cartas++;
+            for (int i = 0; i < jogador_atual->num_cartas - 1; i++) {
+                jogador_atual->cartas[i] = jogador_atual->cartas[i + 1];
+            }
+            jogador_atual->num_cartas--;
+        } else {
+            printf("Empate! As cartas permanecem nas mãos dos jogadores.\n");
+        }
+
+        turno = 1 - turno; // Alternar turno
+    }
+
+    printf("\n--- Fim de jogo ---\n");
+    if (jogador1->num_cartas == 0) {
+        printf("Jogador 2 venceu o jogo!\n");
+    } else {
+        printf("Jogador 1 venceu o jogo!\n");
+    }
+}
+
+int main() {
+    srand(time(NULL));
+
+    Carta cartas[NUM_CARTAS];
+    Jogador jogador1, jogador2;
+
+    inicializar_cartas(cartas);
+    distribuir_cartas(cartas, &jogador1, &jogador2);
+
+    printf("Cartas do jogador 1: %d\n", jogador1.num_cartas);
+    printf("Cartas do jogador 2: %d\n", jogador2.num_cartas);
+
+    jogar(&jogador1, &jogador2);
 
     return 0;
 }
